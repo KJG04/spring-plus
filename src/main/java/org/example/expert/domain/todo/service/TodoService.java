@@ -2,7 +2,6 @@ package org.example.expert.domain.todo.service;
 
 import lombok.RequiredArgsConstructor;
 import org.example.expert.client.WeatherClient;
-import org.example.expert.domain.common.dto.AuthUser;
 import org.example.expert.domain.common.exception.InvalidRequestException;
 import org.example.expert.domain.todo.dto.request.TodoSaveRequest;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
@@ -28,9 +27,7 @@ public class TodoService {
     private final WeatherClient weatherClient;
 
     @Transactional
-    public TodoSaveResponse saveTodo(AuthUser authUser, TodoSaveRequest todoSaveRequest) {
-        User user = User.fromAuthUser(authUser);
-
+    public TodoSaveResponse saveTodo(User user, TodoSaveRequest todoSaveRequest) {
         String weather = weatherClient.getTodayWeather();
 
         Todo newTodo = new Todo(
@@ -52,7 +49,7 @@ public class TodoService {
 
     public Page<TodoResponse> getTodos(int page, int size, String weather, LocalDateTime startAt, LocalDateTime endAt) {
         Pageable pageable = PageRequest.of(page - 1, size);
-        
+
         Page<Todo> todos = todoRepository.findTodosByWeatherAndModifiedAtBetween(weather, startAt, endAt, pageable);
 
         return todos.map(todo -> new TodoResponse(
