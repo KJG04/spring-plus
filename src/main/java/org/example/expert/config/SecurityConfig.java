@@ -1,6 +1,5 @@
 package org.example.expert.config;
 
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.example.expert.domain.auth.service.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
@@ -16,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 @Configuration
 @EnableWebSecurity
@@ -24,6 +24,7 @@ public class SecurityConfig {
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtUtil jwtUtil;
     private final JwtDecodeFilter jwtDecodeFilter;
+    private final HandlerExceptionResolver handlerExceptionResolver;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -33,25 +34,28 @@ public class SecurityConfig {
         AuthenticationFilter authenticationFilter = new AuthenticationFilter(jwtUtil, authenticationManager);
 
         http.csrf(AbstractHttpConfigurer::disable)
+                .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests((authorize) -> authorize
-                        .requestMatchers("/auth/signin").permitAll()
-                        .requestMatchers("/auth/signup").permitAll()
-                        .anyRequest().authenticated())
+                        .requestMatchers("/auth/signin", "/auth/signup", "/error").permitAll()
+                        .anyRequest().authenticated()
+                )
                 .logout(LogoutConfigurer::permitAll)
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                ).authenticationManager(authenticationManager)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authenticationManager(authenticationManager)
                 .addFilterBefore(jwtDecodeFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAt(authenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(httpSecurityExceptionHandlingConfigurer -> httpSecurityExceptionHandlingConfigurer
                         .authenticationEntryPoint(((request, response, authException) -> {
-                                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, authException.getMessage());
+                                    System.out.println("authException");
+
+                                    handlerExceptionResolver.resolveException(request, response, null, authException);
                                 })
                         )
                         .accessDeniedHandler(((request, response, accessDeniedException) -> {
-                                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, accessDeniedException.getMessage());
+                                    System.out.println("accessDeniedException");
+                                    handlerExceptionResolver.resolveException(request, response, null, accessDeniedException);
                                 })
                         )
                 );

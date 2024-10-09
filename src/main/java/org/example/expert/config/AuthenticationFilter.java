@@ -2,12 +2,12 @@ package org.example.expert.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.example.expert.domain.auth.dto.request.SigninRequest;
 import org.example.expert.domain.auth.dto.response.SigninResponse;
 import org.example.expert.domain.auth.entity.UserDetailsImpl;
+import org.example.expert.domain.auth.exception.AuthException;
 import org.example.expert.domain.user.entity.User;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -42,15 +42,14 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
     // 로그인 성공
     @Override
-    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
+    protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException {
         UserDetailsImpl userDetails = (UserDetailsImpl) authResult.getPrincipal();
         User user = userDetails.getUser();
         String token = jwtUtil.createToken(user.getId(), user.getEmail(), user.getUserRole(), user.getNickname());
 
         if (token == null) {
             response.setHeader("Content-Type", "text/plain; charset=utf-8");
-            response.sendError(500, "토큰 생성 실패");
-            return;
+            throw new AuthException("토큰 생성 실패");
         }
 
         SigninResponse signinResponse = new SigninResponse(token);
@@ -60,8 +59,7 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
     }
 
     @Override
-    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException, ServletException {
-        response.setHeader("Content-Type", "text/plain; charset=utf-8");
-        response.sendError(401, "로그인 실패");
+    protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException {
+        throw new AuthException("로그인 실패");
     }
 }

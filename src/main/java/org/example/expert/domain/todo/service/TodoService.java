@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.expert.client.WeatherClient;
 import org.example.expert.domain.common.exception.InvalidRequestException;
 import org.example.expert.domain.todo.dto.request.TodoSaveRequest;
+import org.example.expert.domain.todo.dto.response.AdvancedTodoResponse;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
 import org.example.expert.domain.todo.dto.response.TodoSaveResponse;
 import org.example.expert.domain.todo.entity.Todo;
@@ -77,6 +78,19 @@ public class TodoService {
                 new UserResponse(user.getId(), user.getEmail(), user.getNickname()),
                 todo.getCreatedAt(),
                 todo.getModifiedAt()
+        );
+    }
+
+    public Page<AdvancedTodoResponse> getTodosAdvanced(int page, int size, String title, LocalDateTime startAt, LocalDateTime endAt, String managerName) {
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Todo> todoPage = todoRepository.findTodosByKeywordAndCreatedAtBetweenAndManagerName(title, startAt, endAt, managerName, pageable);
+        return todoPage.map(todo ->
+                AdvancedTodoResponse.builder()
+                        .id(todo.getId())
+                        .title(todo.getTitle())
+                        .managerCount(todo.getManagers().size())
+                        .commentCount(todo.getComments().size())
+                        .build()
         );
     }
 }

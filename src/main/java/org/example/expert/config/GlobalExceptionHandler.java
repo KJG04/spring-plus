@@ -5,6 +5,8 @@ import org.example.expert.domain.common.exception.InvalidRequestException;
 import org.example.expert.domain.common.exception.ServerException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -29,6 +31,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ServerException.class)
     public ResponseEntity<Map<String, Object>> handleServerException(ServerException ex) {
         HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+        return getErrorResponse(status, ex.getMessage());
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthenticationException(AuthenticationException ex) {
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
+        return getErrorResponse(status, ex.getMessage());
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex) {
+        HttpStatus status = HttpStatus.UNAUTHORIZED;
         return getErrorResponse(status, ex.getMessage());
     }
 
